@@ -1,5 +1,0 @@
-# breezy-api/.env
-
-PORT=5000
-MONGODB_URI=mongodb://localhost:27017/breezydb
-JWT_SECRET=YvUMbr3kArwn5NHICR7Unfb2WZLXAmxP2MCzmRpu4WhyD8U0f9GzTC5HPIk9Oeux3c0dAWlkqOoJfaGTZnJjKpBRumn9xjKzvxz3
