@@ -7,7 +7,11 @@ const postSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    content: { type: String, required: true },
+    content: {
+      type: String,
+      required: [true, "Le contenu du post est requis"],
+      maxlength: [280, "Le contenu ne peut pas dépasser 280 caractères"],
+    },
     tags: [String],
     mediaURL: String,
   },

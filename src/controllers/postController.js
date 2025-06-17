@@ -1,13 +1,16 @@
 const Post = require("../models/Post");
 const User = require("../models/User");
 
-
 const createPost = async (req, res, next) => {
   try {
     const { content, tags, mediaURL } = req.body;
-    if (!content || content.length === 0) {
+    if (!content || content.trim().length === 0) {
       res.status(400);
       throw new Error("Le contenu du post est requis");
+    }
+    if (content.length > 280) {
+      res.status(400);
+      throw new Error("Le contenu du post ne peut pas dépasser 280 caractères");
     }
     const newPost = await Post.create({
       author: req.user._id,
@@ -36,7 +39,6 @@ const getFeed = async (req, res, next) => {
     const userId = req.user._id;
     const user = await User.findById(userId);
     const followings = user.following.concat([userId]);
-
     const posts = await Post.find({ author: { $in: followings } })
       .sort({ createdAt: -1 })
       .populate("author", "username avatarURL");
