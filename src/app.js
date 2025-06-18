@@ -25,6 +25,11 @@ app.use(
   express.static(path.join(__dirname, "../uploads/avatars"))
 );
 
+app.use(
+  "/api/uploads/media",
+  express.static(path.join(__dirname, "../uploads/media"))
+);
+
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/posts", postRoutes);

@@ -1,10 +1,11 @@
 const Post = require("../models/Post");
 const User = require("../models/User");
+const path = require("path");
 
 const createPost = async (req, res, next) => {
   try {
-    const { content, tags, mediaURL } = req.body;
-    if (!content || content.trim().length === 0) {
+    const { content, tags } = req.body;
+    if (!content?.trim()) {
       res.status(400);
       throw new Error("Le contenu du post est requis");
     }
@@ -12,12 +13,33 @@ const createPost = async (req, res, next) => {
       res.status(400);
       throw new Error("Le contenu du post ne peut pas dépasser 280 caractères");
     }
+
+    let mediaURL = "";
+    if (req.file) {
+      const { filename, size } = req.file;
+      const ext = path.extname(filename).toLowerCase();
+      const isImage = [".png", ".jpg", ".jpeg", ".gif"].includes(ext);
+      if (isImage && size > 5 * 1024 * 1024) {
+        res.status(400);
+        throw new Error("Image trop volumineuse (max 5 Mo)");
+      }
+      mediaURL = `/uploads/media/${filename}`;
+    }
+
+    const tagsArray =
+      typeof tags === "string"
+        ? JSON.parse(tags)
+        : Array.isArray(tags)
+        ? tags
+        : [];
+
     const newPost = await Post.create({
       author: req.user._id,
       content,
-      tags: tags || [],
-      mediaURL: mediaURL || "",
+      tags: tagsArray,
+      mediaURL,
     });
+
     res.status(201).json({ success: true, data: newPost });
   } catch (err) {
     next(err);
@@ -26,8 +48,9 @@ const createPost = async (req, res, next) => {
 
 const getUserPosts = async (req, res, next) => {
   try {
-    const userId = req.params.id;
-    const posts = await Post.find({ author: userId }).sort({ createdAt: -1 });
+    const posts = await Post.find({ author: req.params.id })
+      .sort({ createdAt: -1 })
+      .populate("author", "username avatarURL");
     res.json({ success: true, data: posts });
   } catch (err) {
     next(err);
@@ -36,9 +59,8 @@ const getUserPosts = async (req, res, next) => {
 
 const getFeed = async (req, res, next) => {
   try {
-    const userId = req.user._id;
-    const user = await User.findById(userId);
-    const followings = user.following.concat([userId]);
+    const user = await User.findById(req.user._id);
+    const followings = user.following.concat([req.user._id]);
     const posts = await Post.find({ author: { $in: followings } })
       .sort({ createdAt: -1 })
       .populate("author", "username avatarURL");
@@ -50,8 +72,7 @@ const getFeed = async (req, res, next) => {
 
 const deletePost = async (req, res, next) => {
   try {
-    const postId = req.params.id;
-    const post = await Post.findById(postId);
+    const post = await Post.findById(req.params.id);
     if (!post) {
       res.status(404);
       throw new Error("Post non trouvé");
@@ -69,30 +90,59 @@ const deletePost = async (req, res, next) => {
 
 const modifyPost = async (req, res, next) => {
   try {
-    const postId = req.params.id;
-    const { content, tags, mediaURL } = req.body;
-
-    const post = await Post.findById(postId);
+    const { content, tags } = req.body;
+    const post = await Post.findById(req.params.id);
     if (!post) {
       res.status(404);
       throw new Error("Post non trouvé");
     }
-
     if (post.author.toString() !== req.user._id.toString()) {
       res.status(403);
       throw new Error("Action interdite");
     }
 
-    post.content = content || post.content;
-    post.tags = tags || post.tags;
-    post.mediaURL = mediaURL || post.mediaURL;
-    await post.save();
+    if (content?.trim()) {
+      if (content.length > 280) {
+        res.status(400);
+        throw new Error("Le contenu du post ne peut pas dépasser 280 caractères");
+      }
+      post.content = content;
+    }
 
+    const tagsArray =
+      typeof tags === "string"
+        ? JSON.parse(tags)
+        : Array.isArray(tags)
+        ? tags
+        : undefined;
+    if (tagsArray) {
+      post.tags = tagsArray;
+    }
+
+    if (req.file) {
+      const { filename, size } = req.file;
+      const ext = path.extname(filename).toLowerCase();
+      const isImage = [".png", ".jpg", ".jpeg", ".gif"].includes(ext);
+      if (isImage && size > 5 * 1024 * 1024) {
+        res.status(400);
+        throw new Error("Image trop volumineuse (max 5 Mo)");
+      }
+      post.mediaURL = `/uploads/media/${filename}`;
+    } else if (req.body.mediaURL) {
+      post.mediaURL = req.body.mediaURL;
+    }
+
+    await post.save();
     res.json({ success: true, data: post });
-  } 
-  catch (err) {
+  } catch (err) {
     next(err);
   }
-}
+};
 
-module.exports = { createPost, getUserPosts, getFeed, deletePost, modifyPost };
+module.exports = {
+  createPost,
+  getUserPosts,
+  getFeed,
+  deletePost,
+  modifyPost,
+};
