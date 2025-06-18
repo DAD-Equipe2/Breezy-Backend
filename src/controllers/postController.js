@@ -67,4 +67,32 @@ const deletePost = async (req, res, next) => {
   }
 };
 
-module.exports = { createPost, getUserPosts, getFeed, deletePost };
+const modifyPost = async (req, res, next) => {
+  try {
+    const postId = req.params.id;
+    const { content, tags, mediaURL } = req.body;
+
+    const post = await Post.findById(postId);
+    if (!post) {
+      res.status(404);
+      throw new Error("Post non trouvé");
+    }
+
+    if (post.author.toString() !== req.user._id.toString()) {
+      res.status(403);
+      throw new Error("Action interdite");
+    }
+
+    post.content = content || post.content;
+    post.tags = tags || post.tags;
+    post.mediaURL = mediaURL || post.mediaURL;
+    await post.save();
+
+    res.json({ success: true, data: post });
+  } 
+  catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { createPost, getUserPosts, getFeed, deletePost, modifyPost };
