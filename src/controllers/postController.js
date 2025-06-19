@@ -139,10 +139,43 @@ const modifyPost = async (req, res, next) => {
   }
 };
 
+const searchPost = async (req, res, next) => {
+    const { query } = req.query;
+    if (!query) {
+        res.status(400);
+        return res.json({ error: 'Query parameter is required' });
+    }
+    try {
+        const tagRegex = /#(\w+)/g;
+        const tags = [];
+        let match;
+        while ((match = tagRegex.exec(query)) !== null) {
+            tags.push(match[1]);
+        }
+        const contentQuery = query.replace(tagRegex, '').trim();
+
+        const searchConditions = [];
+        if (tags.length > 0) {
+            searchConditions.push({ tags: { $in: tags } });
+        }
+        if (contentQuery) {
+            searchConditions.push({ content: { $regex: contentQuery, $options: 'i' } });
+        }
+
+        const searchCriteria = searchConditions.length > 0 ? { $or: searchConditions } : {};
+
+        const results = await Post.find(searchCriteria).limit(15);
+        res.json({ success: true, data: results });
+    } catch (err) {
+        next(err);
+    }
+};
+
 module.exports = {
   createPost,
   getUserPosts,
   getFeed,
   deletePost,
   modifyPost,
+  searchPost
 };
