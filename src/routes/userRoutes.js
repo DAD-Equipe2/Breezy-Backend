@@ -2,13 +2,13 @@ const express = require("express");
 const router = express.Router();
 const authMiddleware = require("../middlewares/authMiddleware");
 const upload = require("../middlewares/upload");
-const { getProfile, updateProfile, getMe } = require("../controllers/userController");
+const { getProfile, updateProfile, getMe, searchProfiles } = require("../controllers/userController");
 
 router.get("/me", authMiddleware, getMe);
 router.get("/profile/:id", authMiddleware, getProfile);
+router.get("/search", authMiddleware, searchProfiles)
 
 router.put("/profile", authMiddleware, updateProfile);
-
 router.put(
   "/profile/avatar",
   authMiddleware,

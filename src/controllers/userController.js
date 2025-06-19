@@ -54,8 +54,32 @@ const updateProfile = async (req, res, next) => {
   }
 };
 
+const searchProfiles = async (req, res) => {
+  const { query } = req.query;
+  if (!query) return res.status(400).json({ error: "Query manquante" });
+
+  const regex = new RegExp(query, "i");
+  try {
+    const users = await User.find({ username: regex })
+      .select("_id username followers following")
+      .lean();
+
+    const usersWithCounts = users.map(user => ({
+      _id: user._id,
+      username: user.username,
+      followersCount: user.followers ? user.followers.length : 0,
+      followingCount: user.following ? user.following.length : 0,
+    }));
+
+    res.json(usersWithCounts);
+  } catch (err) {
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+};
+
 module.exports = {
   getMe,
   getProfile,
   updateProfile,
+  searchProfiles
 };
