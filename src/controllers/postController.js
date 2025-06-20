@@ -118,7 +118,9 @@ const modifyPost = async (req, res, next) => {
     if (tagsArray) {
       post.tags = tagsArray;
     }
-
+    if (req.body.removeMedia === "true") {
+      post.mediaURL = "";
+    }
     if (req.file) {
       const { filename, size } = req.file;
       const ext = path.extname(filename).toLowerCase();
