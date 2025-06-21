@@ -166,7 +166,7 @@ const searchPost = async (req, res, next) => {
 
         const searchCriteria = searchConditions.length > 0 ? { $or: searchConditions } : {};
 
-        const results = await Post.find(searchCriteria).limit(15);
+        const results = await Post.find(searchCriteria).limit(15).populate("author", "username avatarURL");
         res.json({ success: true, data: results });
     } catch (err) {
         next(err);

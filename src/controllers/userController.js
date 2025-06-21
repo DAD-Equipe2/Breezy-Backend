@@ -1,6 +1,9 @@
 const mongoose = require("mongoose");
 const User = require("../models/User");
 const Post = require("../models/Post");
+const Comment = require("../models/Comment");
+const Like = require("../models/Like")
+const Follow = require("../models/Follow");
 
 const getMe = async (req, res, next) => {
   try {
@@ -77,9 +80,39 @@ const searchProfiles = async (req, res) => {
   }
 };
 
+const deleteProfile = async (req, res, next) => {
+  try {
+
+    const userId = req.user._id;
+
+    await Post.deleteMany({ author: userId });
+    await Comment.deleteMany({ author: userId });
+    await Like.deleteMany({ user: userId });
+    await Follow.deleteMany({ $or: [{ follower: userId }, { following: userId }] });
+
+    await User.updateMany(
+      { followers: userId },
+      { $pull: { followers: userId } }
+    );
+    await User.updateMany(
+      { following: userId },
+      { $pull: { following: userId } }
+    );
+    
+    const user = await User.findByIdAndDelete(req.user._id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "Utilisateur non trouvé" });
+    }
+    res.json({ success: true, message: "Profil supprimé avec succès" });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   getMe,
   getProfile,
   updateProfile,
-  searchProfiles
+  searchProfiles,
+  deleteProfile
 };
