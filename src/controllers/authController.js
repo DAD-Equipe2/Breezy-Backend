@@ -3,6 +3,12 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 
+const generateAccessToken = (user) =>
+  jwt.sign({ id: user._id, username: user.username, role: user.role }, process.env.JWT_SECRET, { expiresIn: "1h" });
+
+const generateRefreshToken = (user) =>
+  jwt.sign({ id: user._id, username: user.username, role: user.role }, process.env.JWT_REFRESH_SECRET, { expiresIn: "30d" });
+
 const register = async (req, res, next) => {
   try {
     const { username, email, password, bio } = req.body;
@@ -34,13 +40,19 @@ const register = async (req, res, next) => {
       avatarURL,
     });
 
-    const token = jwt.sign(
-      { id: user._id.toString(), username: user.username },
-      process.env.JWT_SECRET,
-      { expiresIn: "30d" }
-    );
+    const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
 
-    res.status(201).json({
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: "Strict",
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    })
+    .json({
       success: true,
       data: {
         _id: user._id,
@@ -51,9 +63,9 @@ const register = async (req, res, next) => {
         followers: user.followers,
         following: user.following,
         createdAt: user.createdAt,
-        token,
-      },
-    });
+        accessToken
+        }
+    })
   } catch (err) {
     next(err);
   }
@@ -80,13 +92,19 @@ const login = async (req, res, next) => {
         .json({ success: false, message: "Identifiants invalides" });
     }
 
-    const token = jwt.sign(
-      { id: user._id.toString(), username: user.username },
-      process.env.JWT_SECRET,
-      { expiresIn: "30d" }
-    );
+    const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
 
-    res.json({
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: "Strict",
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    })
+    .json({
       success: true,
       data: {
         _id: user._id,
@@ -97,12 +115,31 @@ const login = async (req, res, next) => {
         followers: user.followers,
         following: user.following,
         createdAt: user.createdAt,
-        token,
-      },
+        accessToken
+      }
     });
   } catch (err) {
     next(err);
   }
 };
 
-module.exports = { register, login };
+const refreshToken = async (req, res) => {
+  const token = req.cookies.refreshToken;
+  if (!token) {
+    return res.status(401).json({ success: false, message: "Pas de token" });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+    const user = await User.findById(decoded.id);
+    if (!user || user.refreshToken !== token) {
+      return res.status(403).json({ success: false, message: "Token invalide" });
+    }
+    const accessToken = generateAccessToken(user);
+    res.json({ success: true, accessToken });
+  } catch (err) {
+    res.status(401).json({ success: false, message: "Token invalide / expiré" });
+  }
+}
+
+module.exports = { register, login, refreshToken };

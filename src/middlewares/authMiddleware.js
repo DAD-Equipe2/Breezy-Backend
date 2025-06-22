@@ -28,4 +28,28 @@ async function authMiddleware(req, res, next) {
   }
 }
 
-module.exports = authMiddleware;
+async function visitorOrAdmin(req, res, next) {
+  let token;
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    token = authHeader.split(" ")[1];
+  }
+
+  if (!token){
+    return next();
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (decoded.role === "administrator"){
+      req.user = decoded
+      return next()
+    }
+    return res.status(403).json({ success: false, message: "Accès interdit : Vous avez déjà un compte !" });
+  } catch {
+    return next();
+  }
+}
+
+
+module.exports = {authMiddleware, visitorOrAdmin};

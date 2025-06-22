@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { followUser, unfollowUser, getFollowers, getFollowing } = require("../controllers/followController");
-const  authMiddleware  = require("../middlewares/authMiddleware");
+const { authMiddleware } = require("../middlewares/authMiddleware");
 
 router.post("/follow/:id", authMiddleware, followUser);
 router.post("/unfollow/:id", authMiddleware, unfollowUser);

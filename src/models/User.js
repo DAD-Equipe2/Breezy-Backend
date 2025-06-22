@@ -39,6 +39,15 @@ const userSchema = new mongoose.Schema(
         ref: "User",
       },
     ],
+    role: {
+      type: String,
+      enum: ["user", "moderator", "administrator"],
+      default: "user",
+    },
+    refreshToken: {
+      type: String,
+      default: "",
+    },
   },
   { timestamps: true }
 );
