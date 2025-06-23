@@ -7,6 +7,7 @@ const userSchema = new mongoose.Schema(
       required: [true, "Le nom d’utilisateur est requis"],
       unique: true,
       trim: true,
+      maxlength: 20,
     },
     email: {
       type: String,
@@ -22,6 +23,7 @@ const userSchema = new mongoose.Schema(
     bio: {
       type: String,
       default: "",
+      maxlength: 100,
     },
     avatarURL: {
       type: String,

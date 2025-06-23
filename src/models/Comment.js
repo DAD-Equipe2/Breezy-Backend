@@ -11,6 +11,7 @@ const replySchema = new Schema(
     content: {
       type: String,
       required: [true, "Le contenu de la réponse est requis"],
+      maxlength: 280,
     },
     createdAt: {
       type: Date,
@@ -35,6 +36,7 @@ const commentSchema = new Schema(
     content: {
       type: String,
       required: [true, "Le contenu du commentaire est requis"],
+      maxlength: 280,
     },
     replies: [replySchema],
   },

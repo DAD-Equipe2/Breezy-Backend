@@ -43,16 +43,20 @@ const getProfile = async (req, res, next) => {
 
 const updateProfile = async (req, res, next) => {
   try {
-    const { bio, avatarURL } = req.body;
+    const { username, bio, avatarURL } = req.body;
     const user = await User.findById(req.user._id);
     if (!user) {
       return res.status(404).json({ success: false, message: "Utilisateur non trouvé" });
     }
+    if (typeof username === "string" && username.trim()) user.username = username.trim();
     if (typeof bio === "string") user.bio = bio;
     if (typeof avatarURL === "string") user.avatarURL = avatarURL;
     await user.save();
     res.json({ success: true, data: user });
   } catch (err) {
+    if (err.code === 11000 && err.keyPattern && err.keyPattern.username) {
+      return res.status(409).json({ success: false, message: "Ce nom d'utilisateur est déjà pris." });
+    }
     next(err);
   }
 };
