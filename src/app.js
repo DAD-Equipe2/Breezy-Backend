@@ -9,6 +9,7 @@ const commentRoutes = require("./routes/commentRoutes");
 const likeRoutes = require("./routes/likeRoutes");
 const followRoutes = require("./routes/followRoutes");
 const { errorHandler } = require("./middlewares/errorMiddleware");
+const cookieParser = require("cookie-parser");
 
 
 const app = express();
@@ -33,6 +34,8 @@ app.use(
   "/api/uploads/media",
   express.static(path.join(__dirname, "../uploads/media"))
 );
+
+app.use(cookieParser());
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);

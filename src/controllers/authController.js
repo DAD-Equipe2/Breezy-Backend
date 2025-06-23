@@ -49,7 +49,7 @@ const register = async (req, res, next) => {
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: false,
-      sameSite: "Strict",
+      sameSite: "Lax",
       maxAge: 30 * 24 * 60 * 60 * 1000,
     })
     .json({
@@ -101,7 +101,7 @@ const login = async (req, res, next) => {
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: false,
-      sameSite: "Strict",
+      sameSite: "Lax",
       maxAge: 30 * 24 * 60 * 60 * 1000,
     })
     .json({
@@ -126,20 +126,50 @@ const login = async (req, res, next) => {
 const refreshToken = async (req, res) => {
   const token = req.cookies.refreshToken;
   if (!token) {
-    return res.status(401).json({ success: false, message: "Pas de token" });
+    return res.status(401).json(
+      { success: false,
+        message: "Pas de token"
+      });
   }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
     const user = await User.findById(decoded.id);
     if (!user || user.refreshToken !== token) {
-      return res.status(403).json({ success: false, message: "Token invalide" });
+      return res.status(403).json(
+        { success: false,
+          message: "Token invalide"
+        });
     }
     const accessToken = generateAccessToken(user);
     res.json({ success: true, accessToken });
   } catch (err) {
-    res.status(401).json({ success: false, message: "Token invalide / expiré" });
+    res.status(401).json(
+      { success: false,
+        message: "Token invalide / expiré"
+      });
   }
 }
 
-module.exports = { register, login, refreshToken };
+const logout = async (req, res) => {
+  const token = req.cookies.refreshToken;
+  if (!token) {
+    return res.status(401).json(
+      { success: false, 
+        message: "Pas de token"
+      });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+    await User.findByIdAndUpdate(decoded.id, { refreshToken: "" });
+  } catch (err) {}
+
+  res.clearCookie("refreshToken")
+  res.json(
+    { success: true,
+      message: "Déconnexion réussie"
+    });
+}
+
+module.exports = { register, login, refreshToken, logout };
