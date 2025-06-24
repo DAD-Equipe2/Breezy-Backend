@@ -68,14 +68,19 @@ const searchProfiles = async (req, res) => {
   const regex = new RegExp(query, "i");
   try {
     const users = await User.find({ username: regex })
-      .select("_id username followers following")
+      .select("_id username followers following avatarURL")
       .lean();
 
-    const usersWithCounts = users.map(user => ({
-      _id: user._id,
-      username: user.username,
-      followersCount: user.followers ? user.followers.length : 0,
-      followingCount: user.following ? user.following.length : 0,
+    const usersWithCounts = await Promise.all(users.map(async user => {
+      const postsCount = await Post.countDocuments({ author: user._id });
+      return {
+        _id: user._id,
+        username: user.username,
+        avatarUrl: user.avatarURL || null,
+        followersCount: user.followers ? user.followers.length : 0,
+        followingCount: user.following ? user.following.length : 0,
+        postsCount,
+      };
     }));
 
     res.json(usersWithCounts);
