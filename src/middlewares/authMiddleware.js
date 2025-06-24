@@ -3,12 +3,16 @@ const User = require("../models/User");
 
 async function authMiddleware(req, res, next) {
   let token;
-  const authHeader = req.headers.authorization;
-  console.log("authHeader:", authHeader);
-
-  if (authHeader && authHeader.startsWith("Bearer ")) {
-    token = authHeader.split(" ")[1];
-    console.log("token extrait:", token);
+  if (req.cookies && req.cookies.accessToken) {
+    token = req.cookies.accessToken;
+  }
+  
+  if (!token) {
+    console.log("Token extrait :", token);
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      token = authHeader.split(" ")[1];
+    }
   }
 
   if (!token) {
@@ -18,7 +22,7 @@ async function authMiddleware(req, res, next) {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log("decoded token:", decoded);
+    console.log("Token décodé :", decoded);
     req.user = await User.findById(decoded.id).select("-password");
     next();
   } catch (err) {
@@ -30,9 +34,15 @@ async function authMiddleware(req, res, next) {
 
 async function visitorOrAdmin(req, res, next) {
   let token;
-  const authHeader = req.headers.authorization;
-  if (authHeader && authHeader.startsWith("Bearer ")) {
-    token = authHeader.split(" ")[1];
+
+  if (req.cookies && req.cookies.accessToken) {
+    token = req.cookies.accessToken;
+  }
+  if (!token) {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      token = authHeader.split(" ")[1];
+    }
   }
 
   if (!token){
@@ -52,4 +62,4 @@ async function visitorOrAdmin(req, res, next) {
 }
 
 
-module.exports = {authMiddleware, visitorOrAdmin};
+module.exports = {authMiddleware, visitorOrAdmin}

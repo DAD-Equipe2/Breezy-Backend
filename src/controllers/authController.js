@@ -49,8 +49,16 @@ const register = async (req, res, next) => {
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: false,
-      sameSite: "Lax",
+      sameSite: "lax",
       maxAge: 30 * 24 * 60 * 60 * 1000,
+      path: "/"
+    })
+    .cookie("accessToken", accessToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: "lax",
+      maxAge: 60 * 60 * 1000,
+      path: "/"
     })
     .json({
       success: true,
@@ -63,7 +71,6 @@ const register = async (req, res, next) => {
         followers: user.followers,
         following: user.following,
         createdAt: user.createdAt,
-        accessToken
         }
     })
   } catch (err) {
@@ -101,8 +108,16 @@ const login = async (req, res, next) => {
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: false,
-      sameSite: "Lax",
+      sameSite: "lax",
       maxAge: 30 * 24 * 60 * 60 * 1000,
+      path: "/"
+    })
+    .cookie("accessToken", accessToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: "lax",
+      maxAge: 60 * 60 * 1000,
+      path: "/"
     })
     .json({
       success: true,
@@ -114,8 +129,7 @@ const login = async (req, res, next) => {
         avatarURL: user.avatarURL,
         followers: user.followers,
         following: user.following,
-        createdAt: user.createdAt,
-        accessToken
+        createdAt: user.createdAt
       }
     });
   } catch (err) {
@@ -142,7 +156,14 @@ const refreshToken = async (req, res) => {
         });
     }
     const accessToken = generateAccessToken(user);
-    res.json({ success: true, accessToken });
+    res.cookie("accessToken", accessToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: "lax",
+      maxAge: 60 * 60 * 1000,
+      path: "/"
+    })
+    res.json({ success: true })
   } catch (err) {
     res.status(401).json(
       { success: false,
@@ -166,6 +187,7 @@ const logout = async (req, res) => {
   } catch (err) {}
 
   res.clearCookie("refreshToken")
+  res.clearCookie("accessToken");
   res.json(
     { success: true,
       message: "Déconnexion réussie"

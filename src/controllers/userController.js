@@ -76,7 +76,7 @@ const searchProfiles = async (req, res) => {
       return {
         _id: user._id,
         username: user.username,
-        avatarUrl: user.avatarURL || null,
+        avatarURL: user.avatarURL || null,
         followersCount: user.followers ? user.followers.length : 0,
         followingCount: user.following ? user.following.length : 0,
         postsCount,
