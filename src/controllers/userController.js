@@ -118,10 +118,38 @@ const deleteProfile = async (req, res, next) => {
   }
 };
 
+const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find({}, "-password"); // sans le mot de passe
+    res.json({ success: true, data: users });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Erreur serveur" });
+  }
+};
+
+const updateUserRole = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { role } = req.body;
+    if (!["user", "moderator", "administrator"].includes(role)) {
+      return res.status(400).json({ success: false, message: "Rôle invalide" });
+    }
+    const user = await User.findByIdAndUpdate(id, { role }, { new: true, runValidators: true });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "Utilisateur non trouvé" });
+    }
+    res.json({ success: true, data: user });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Erreur serveur" });
+  }
+};
+
 module.exports = {
   getMe,
   getProfile,
   updateProfile,
   searchProfiles,
-  deleteProfile
+  deleteProfile,
+  getAllUsers,
+  updateUserRole
 };
