@@ -1,6 +1,8 @@
 const Post = require("../models/Post");
 const User = require("../models/User");
 const path = require("path");
+const Comment = require("../models/Comment");
+const Like = require("../models/Like");
 
 const createPost = async (req, res, next) => {
   try {
@@ -81,7 +83,12 @@ const deletePost = async (req, res, next) => {
       res.status(403);
       throw new Error("Action interdite");
     }
-    await post.remove();
+
+    await Comment.deleteMany({ post: post._id });
+    await Like.deleteMany({ post: post._id });
+
+    await Post.findByIdAndDelete(post._id);
+
     res.json({ success: true, message: "Post supprimé" });
   } catch (err) {
     next(err);
