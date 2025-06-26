@@ -127,8 +127,7 @@ const modifyPost = async (req, res, next) => {
     }
     if (req.body.removeMedia === "true") {
       post.mediaURL = "";
-    }
-    if (req.file) {
+    } else if (req.file) {
       const { filename, size } = req.file;
       const ext = path.extname(filename).toLowerCase();
       const isImage = [".png", ".jpg", ".jpeg", ".gif"].includes(ext);
@@ -137,8 +136,6 @@ const modifyPost = async (req, res, next) => {
         throw new Error("Image trop volumineuse (max 5 Mo)");
       }
       post.mediaURL = `/uploads/media/${filename}`;
-    } else if (req.body.mediaURL) {
-      post.mediaURL = req.body.mediaURL;
     }
 
     await post.save();

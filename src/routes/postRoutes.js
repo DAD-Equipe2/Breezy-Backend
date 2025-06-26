@@ -9,7 +9,6 @@ router.post("/", authMiddleware, authorizeRoles("user", "moderator", "administra
 router.patch("/:id", authMiddleware, authorizeRoles("user", "moderator", "administrator"), upload.single("media"), modifyPost);
 router.get("/feed", authMiddleware, authorizeRoles("user", "moderator", "administrator"), getFeed);
 router.delete("/:id", authMiddleware, authorizeRoles("user", "moderator", "administrator"), deletePost);
-router.patch("/:id", authMiddleware, authorizeRoles("user", "moderator", "administrator"), modifyPost);
 router.get('/search', authMiddleware, authorizeRoles("user", "moderator", "administrator"), searchPost);
 
 module.exports = router;
