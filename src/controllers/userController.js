@@ -4,6 +4,8 @@ const Post = require("../models/Post");
 const Comment = require("../models/Comment");
 const Like = require("../models/Like")
 const Follow = require("../models/Follow");
+const path = require("path");
+const fs = require("fs");
 
 const getMe = async (req, res, next) => {
   try {
@@ -144,6 +146,32 @@ const updateUserRole = async (req, res) => {
   }
 };
 
+const updateAvatar = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "Utilisateur non trouvé" });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: "Aucun fichier d'avatar fourni" });
+    }
+
+    if (user.avatarURL && user.avatarURL !== "/default-avatar.png" && user.avatarURL.startsWith("/uploads/avatars/")) {
+      const oldAvatarPath = path.join(__dirname, "../../uploads/avatars", user.avatarURL.split('/').pop());
+      fs.unlink(oldAvatarPath, (err) => {
+        console.error("Erreur lors de la suppression de l'ancien avatar :", err);
+      });
+    }
+
+    user.avatarURL = `/uploads/avatars/${req.file.filename}`;
+    await user.save();
+    res.json({ success: true, data: user });
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   getMe,
   getProfile,
@@ -151,5 +179,6 @@ module.exports = {
   searchProfiles,
   deleteProfile,
   getAllUsers,
-  updateUserRole
+  updateUserRole,
+  updateAvatar
 };

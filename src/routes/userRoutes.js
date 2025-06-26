@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const { authMiddleware } = require("../middlewares/authMiddleware");
 const upload = require("../middlewares/upload");
-const { getProfile, updateProfile, getMe, searchProfiles, deleteProfile, getAllUsers, updateUserRole } = require("../controllers/userController");
+const { getProfile, updateProfile, getMe, searchProfiles, deleteProfile, getAllUsers, updateUserRole, updateAvatar} = require("../controllers/userController");
 const authorizeRoles = require("../middlewares/roleMiddleware");
 
 router.get("/me", authMiddleware, authorizeRoles("user", "moderator", "administrator"), getMe);
@@ -13,19 +13,8 @@ router.get("/", authMiddleware, authorizeRoles("administrator"), getAllUsers);
 router.delete("/profile", authMiddleware, authorizeRoles("user", "moderator", "administrator"), deleteProfile);
 
 router.put("/profile", authMiddleware, authorizeRoles("user", "moderator", "administrator"), updateProfile);
-router.put("/profile/avatar", authMiddleware, authorizeRoles("user", "moderator", "administrator"), upload.single("avatar"), async (req, res, next) => {
-    try {
-      if (!req.file) throw new Error("Fichier manquant");
-      const avatarURL = `/uploads/avatars/${req.file.filename}`;
-      const user = await require("../models/User").findById(req.user._id);
-      user.avatarURL = avatarURL;
-      await user.save();
-      res.json({ success: true, data: { avatarURL } });
-    } catch (err) {
-      next(err);
-    }
-  }
-);
+router.put("/profile/avatar", authMiddleware, authorizeRoles("user", "moderator", "administrator"), upload.single("avatar"), updateAvatar);
+
 router.put("/:id/role", authMiddleware, authorizeRoles("administrator"), updateUserRole);
 
 module.exports = router;
